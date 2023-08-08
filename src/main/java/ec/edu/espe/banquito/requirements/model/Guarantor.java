@@ -34,6 +34,9 @@ public class Guarantor {
     @Column(name = "NAME", length = 30, nullable = false)
     private String name;
 
+    @Column(name = "STATUS", length = 3)
+    private String status;
+
     @Version
     @Column(name = "VERSION", nullable = false)
     private Long version;

@@ -39,6 +39,9 @@ public class Asset {
     @Column(name = "CURRENCY", length = 3)
     private String currency;
 
+    @Column(name = "STATUS", length = 3)
+    private String status;
+
     @Version
     @Column(name = "VERSION", nullable = false)
     private Long version;

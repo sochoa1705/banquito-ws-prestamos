@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Table(name = "INTEREST_ACCRUE")
 public class InterestAccrue {
 
@@ -36,6 +38,9 @@ public class InterestAccrue {
 
     @Column(name = "CHARGE_FRECUENCY", length = 10)
     private String chargeFrecuency;
+
+    @Column(name = "STATUS", length = 3)
+    private String status;
 
     @Version
     @Column(name = "VERSION", nullable = false)
