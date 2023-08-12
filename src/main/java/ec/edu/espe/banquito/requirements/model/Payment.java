@@ -1,13 +1,7 @@
 package ec.edu.espe.banquito.requirements.model;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Version;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,9 +26,6 @@ public class Payment {
     @Column(name = "LOAN_TRANSACTION_ID", nullable = false)
     private Integer loanTransactionId;
 
-    @Column(name = "ACCOUNT_TRANSACTION_ID", nullable = false)
-    private Integer accountTransactionId;
-
     @Column(name = "TYPE", length = 12, nullable = false)
     private String type;
 
@@ -45,7 +36,7 @@ public class Payment {
     private String status;
 
     @Column(name = "CREDITOR_BANK_CODE", length = 20, nullable = false)
-    private String creditosBankCode;
+    private String creditorBankCode;
 
     @Column(name = "CREDITOR_ACCOUNT", length = 16, nullable = false)
     private String creditorAccount;
@@ -59,4 +50,12 @@ public class Payment {
     @Version
     @Column(name = "VERSION", nullable = false)
     private Long version;
+
+    @ManyToOne
+    @JoinColumn(name = "LOAN_ID", nullable = false, updatable = false, insertable = false)
+    private Loan loan;
+
+    @ManyToOne
+    @JoinColumn(name = "LOAN_TRANSACTION_ID", nullable = false, updatable = false, insertable = false)
+    private LoanTransaction loanTransaction;
 }

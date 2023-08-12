@@ -2,16 +2,9 @@ package ec.edu.espe.banquito.requirements.model;
 
 import java.math.BigDecimal;
 import java.security.Timestamp;
+import java.util.List;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
-import jakarta.persistence.Version;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -64,4 +57,8 @@ public class LoanTransaction {
     @Version
     @Column(name = "VERSION", nullable = false)
     private Long version;
+
+    @JoinColumn(name = "PAYMENT_ID", referencedColumnName = "PAYMENT_ID")
+    @OneToMany(cascade = CascadeType.ALL)
+    private List<Payment> payments;
 }

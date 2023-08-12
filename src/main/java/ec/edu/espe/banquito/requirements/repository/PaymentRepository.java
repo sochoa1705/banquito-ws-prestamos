@@ -17,4 +17,6 @@ public interface PaymentRepository extends JpaRepository<Payment,Integer>{
 
     List<Payment> findByStatus(String status);
 
+    Payment findByLoanIdAndLoanTransactionId(Integer loanId, Integer loanTransactionId);
+
 }
