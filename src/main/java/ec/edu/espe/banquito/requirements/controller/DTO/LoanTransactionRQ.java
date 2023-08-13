@@ -12,9 +12,6 @@ public class LoanTransactionRQ {
 
     private String uniqueKey;
     private String type;
-    private Timestamp creationDate;
-    private Timestamp bookingDate;
-    private Timestamp valueDate;
     private String status;
     private BigDecimal amount;
     private Boolean applyTax;

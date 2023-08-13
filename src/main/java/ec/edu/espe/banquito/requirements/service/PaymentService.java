@@ -89,6 +89,7 @@ public class PaymentService {
                 .build();
     }
 
+    //Request
     private Payment transformPaymentRQ(PaymentRQ paymentRQ){
         return Payment.builder()
                 .loanId(paymentRQ.getLoanId())

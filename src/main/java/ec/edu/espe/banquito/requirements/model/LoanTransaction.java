@@ -2,6 +2,7 @@ package ec.edu.espe.banquito.requirements.model;
 
 import java.math.BigDecimal;
 import java.security.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 import jakarta.persistence.*;
@@ -31,13 +32,15 @@ public class LoanTransaction {
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CREATION_DATE", nullable = false)
-    private Timestamp creationDate;
+    private Date creationDate;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "BOOKING_DATE", nullable = false)
-    private Timestamp bookingDate;
+    private Date bookingDate;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "VALUE_DATE", nullable = false)
-    private Timestamp valueDate;
+    private Date valueDate;
 
     @Column(name = "STATUS", length = 3, nullable = false)
     private String status;
@@ -58,7 +61,7 @@ public class LoanTransaction {
     @Column(name = "VERSION", nullable = false)
     private Long version;
 
-    @JoinColumn(name = "PAYMENT_ID", referencedColumnName = "PAYMENT_ID")
+    @JoinColumn(name = "LOAN_TRANSACTION_ID", referencedColumnName = "LOAN_TRANSACTION_ID")
     @OneToMany(cascade = CascadeType.ALL)
     private List<Payment> payments;
 }

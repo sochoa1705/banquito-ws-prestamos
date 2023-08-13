@@ -11,7 +11,7 @@ import java.security.Timestamp;
 
 public interface LoanTransactionRepository extends JpaRepository <LoanTransaction,Integer>{
 
-    Optional<LoanTransaction>  findByUniqueKey(String uniqueKey);
+    LoanTransaction  findByUniqueKey(String uniqueKey);
 
     List<LoanTransaction> findByBookingDate(Timestamp bookingDate);
 
