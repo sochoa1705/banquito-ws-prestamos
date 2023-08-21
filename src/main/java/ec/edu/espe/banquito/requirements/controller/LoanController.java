@@ -3,11 +3,14 @@ package ec.edu.espe.banquito.requirements.controller;
 
 import ec.edu.espe.banquito.requirements.controller.DTO.LoanRQ;
 import ec.edu.espe.banquito.requirements.controller.DTO.LoanRS;
+import ec.edu.espe.banquito.requirements.controller.DTO.LoanTransactionRQ;
+import ec.edu.espe.banquito.requirements.controller.DTO.PaymentRQ;
 import ec.edu.espe.banquito.requirements.service.LoanService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin
 @RestController
@@ -18,12 +21,6 @@ public class LoanController {
 
     public LoanController(LoanService loanService) {
         this.loanService = loanService;
-    }
-
-    @GetMapping
-    public ResponseEntity<List<LoanRS>> getAll() {
-        List<LoanRS> loans = this.loanService.getAllLoan();
-        return ResponseEntity.ok(loans);
     }
 
     @GetMapping("customerId/{customerId}")
@@ -39,27 +36,12 @@ public class LoanController {
     }
 
     @PostMapping("/loan-create")
-    public ResponseEntity<?> createLoan(@RequestBody LoanRQ loanRQ){
+    public ResponseEntity<?> createLoan(@RequestBody Map<String, Object> objetos){
+        LoanRQ loanRQ = (LoanRQ) objetos.get("loanRQ");
+        LoanTransactionRQ loanTransactionRQ = (LoanTransactionRQ) objetos.get("loanTransactionRQ");
+        PaymentRQ paymentRQ = (PaymentRQ) objetos.get("paymentRQ");
         try{
-            return ResponseEntity.ok(this.loanService.createLoan(loanRQ));
-        }catch (RuntimeException rte){
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PutMapping("/loan-update")
-    public ResponseEntity<?> updateLoan(@RequestBody LoanRQ loanRQ){
-        try{
-            return ResponseEntity.ok(this.loanService.updateLoan(loanRQ));
-        }catch (RuntimeException rte){
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PutMapping("/loan-status")
-    public ResponseEntity<?> statusLoan(@RequestBody LoanRQ loanRQ){
-        try{
-            return ResponseEntity.ok(this.loanService.statusLoan(loanRQ));
+            return ResponseEntity.ok(this.loanService.create(loanRQ, paymentRQ, loanTransactionRQ));
         }catch (RuntimeException rte){
             return ResponseEntity.badRequest().build();
         }

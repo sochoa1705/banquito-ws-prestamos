@@ -10,12 +10,9 @@ import lombok.Data;
 @Builder
 public class LoanTransactionRQ {
 
-    private String uniqueKey;
     private String type;
-    private String status;
     private BigDecimal amount;
     private Boolean applyTax;
-    private String parentLoanTrxKey;
     private String notes;
 
 }

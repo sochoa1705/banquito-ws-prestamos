@@ -12,7 +12,7 @@ public class LoanRS {
 
     private Integer groupCompanyId;
     private Integer customerId;
-    private Integer interestAccrueId;
+    //private Integer interestAccrueId;
     private Integer guarantorId;
     private Integer branchId;
     private Integer loanProductId;
@@ -29,8 +29,7 @@ public class LoanRS {
     private Date approvalDate;
     private Date dueDate;
     private BigDecimal monthlyFee;
+    private Date lastPaymentDueDate;
     private Integer daysLate;
     private BigDecimal interestRate;
-    private Boolean redraw;
-    private BigDecimal redrawBalance;
 }

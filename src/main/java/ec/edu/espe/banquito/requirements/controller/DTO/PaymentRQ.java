@@ -11,6 +11,7 @@ public class PaymentRQ {
     private Integer id;
     private Integer loanId;
     private Integer loanTransactionId;
+    private Integer accountTransactionId;
     private String type;
     private String reference;
     private String creditorAccount;

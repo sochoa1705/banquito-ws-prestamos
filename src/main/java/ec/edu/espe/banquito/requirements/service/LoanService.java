@@ -1,11 +1,13 @@
 package ec.edu.espe.banquito.requirements.service;
 
-import ec.edu.espe.banquito.requirements.controller.DTO.InterestAccrueRS;
-import ec.edu.espe.banquito.requirements.controller.DTO.LoanRQ;
-import ec.edu.espe.banquito.requirements.controller.DTO.LoanRS;
+import ec.edu.espe.banquito.requirements.controller.DTO.*;
 import ec.edu.espe.banquito.requirements.model.InterestAccrue;
 import ec.edu.espe.banquito.requirements.model.Loan;
+import ec.edu.espe.banquito.requirements.model.LoanTransaction;
+import ec.edu.espe.banquito.requirements.model.Payment;
 import ec.edu.espe.banquito.requirements.repository.LoanRepository;
+import ec.edu.espe.banquito.requirements.repository.LoanTransactionRepository;
+import ec.edu.espe.banquito.requirements.repository.PaymentRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -16,18 +18,15 @@ import java.util.*;
 @Service
 public class LoanService {
     private final LoanRepository loanRepository;
+    private final PaymentRepository paymentRepository;
+    private final LoanTransactionRepository loanTransactionRepository;
 
-    public LoanService(LoanRepository loanRepository) {
+    public LoanService(LoanRepository loanRepository,
+                       PaymentRepository paymentRepository,
+                       LoanTransactionRepository loanTransactionRepository) {
         this.loanRepository = loanRepository;
-    }
-
-    public List<LoanRS> getAllLoan() {
-        List<Loan> loans = this.loanRepository.findAll();
-        List<LoanRS> loansList = new ArrayList<>();
-        for (Loan loan : loans) {
-            loansList.add(this.transformLoan(loan));
-        }
-        return loansList;
+        this.paymentRepository = paymentRepository;
+        this.loanTransactionRepository = loanTransactionRepository;
     }
 
     public LoanRS getLoanByCustomerId(Integer customerId){
@@ -41,115 +40,66 @@ public class LoanService {
     }
 
     @Transactional
-    public LoanRS createLoan(LoanRQ loanRQ) {
-        try {
-            Loan loanRequest = this.transformLoanRQ(loanRQ);
-            if (loanRequest.getCustomerId() != null && loanRequest.getGroupCompanyId() == null){
-                Loan optionalLoan = this.loanRepository.findByCustomerIdAndLoanProductId(loanRequest.getCustomerId(), loanRequest.getLoanProductId());
-                if(optionalLoan == null){
-                    loanRequest.setUniqueKey(UUID.randomUUID().toString());
-                    loanRequest.setStatus("APR");
-                    return this.transformLoan(this.loanRepository.save(loanRequest));
-                }else {
-                    throw new RuntimeException("Error al crear el préstamo");
-                }
-            } else if (loanRequest.getGroupCompanyId() != null && loanRequest.getCustomerId() == null){
-                Loan optionalLoan = this.loanRepository.findByGroupCompanyIdAndLoanProductId(loanRequest.getGroupCompanyId(), loanRequest.getLoanProductId());
-                if(optionalLoan == null){
-                    loanRequest.setUniqueKey(UUID.randomUUID().toString());
-                    loanRequest.setStatus("APR");
-                    return this.transformLoan(this.loanRepository.save(loanRequest));
-                }else {
-                    throw new RuntimeException("Error al crear el préstamo");
-                }
-            }else{
-                throw new RuntimeException();
-            }
-        }catch (RuntimeException re){
-            throw re;
+    public LoanRS create(LoanRQ loanRQ, PaymentRQ paymentRQ, LoanTransactionRQ loanTransactionRQ) {
+        Loan newLoan = this.transformLoanRQ(loanRQ);
+
+        /* Verificar existencia de préstamos para cliente y grupo de compañia */
+        Loan existLoanCustomer = this.loanRepository.findByCustomerIdAndLoanProductIdAndLoanHolderTypeAndLoanHolderCode(
+                loanRQ.getCustomerId(), loanRQ.getLoanProductId(), loanRQ.getLoanHolderType(), loanRQ.getLoanHolderCode()
+        );
+        Loan existLoanGroupCompany = this.loanRepository.findByGroupCompanyIdAndLoanProductIdAndLoanHolderTypeAndLoanHolderCode(
+                loanRQ.getGroupCompanyId(), loanRQ.getLoanProductId(), loanRQ.getLoanHolderType(), loanRQ.getLoanHolderCode()
+        );
+
+        /* Verificación si es Customer o Group Company */
+        if ((existLoanCustomer == null && existLoanGroupCompany == null) ||
+                (existLoanCustomer != null && existLoanGroupCompany != null)) {
+            throw new RuntimeException("Debe ser cliente o grupo de compañía, pero no ambos.");
         }
+
+        /* Detalles de prestamo */
+        newLoan.setUniqueKey(UUID.randomUUID().toString());
+        newLoan.setStatus("APR");
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MONTH, newLoan.getTerm());
+        Date newDate = calendar.getTime();
+        newLoan.setApprovalDate(new Date());
+        newLoan.setDueDate(newDate);
+
+        /* Guardar Loan */
+        Loan resultLoan = loanRepository.save(newLoan);
+
+        /* Crear y guardar LoanTransaction */
+        LoanTransaction newLoanTransaction = transformLoanTransactionRQ(loanTransactionRQ);
+        LoanTransaction existingLoanTransaction = loanTransactionRepository.findByTypeAndStatusAndAmountAndCreationDate(
+                newLoanTransaction.getType(), newLoanTransaction.getStatus(), newLoanTransaction.getAmount(),
+                newLoanTransaction.getCreationDate()
+        );
+
+        if (existingLoanTransaction == null) {
+            LoanTransaction resultLoanTransaction = loanTransactionRepository.save(newLoanTransaction);
+
+            /* Crear y guardar Payment */
+            Payment newPayment = transformPaymentRQ(paymentRQ);
+            Payment existingPayment = paymentRepository.findByLoanIdAndLoanTransactionId(newPayment.getLoanId(),
+                    newPayment.getLoanTransactionId());
+            if (existingPayment == null) {
+                Payment resultPayment = paymentRepository.save(newPayment);
+            } else {
+                throw new RuntimeException("Ya existe el pago.");
+            }
+        } else {
+            throw new RuntimeException("Ya existe la transacción de préstamo.");
+        }
+        return this.transformLoan(resultLoan);
     }
 
-    @Transactional
-    public LoanRS updateLoan(LoanRQ loanRQ){
-        try{
-            Loan loanRequest = this.transformLoanRQ(loanRQ);
-            if (loanRequest.getCustomerId() != null && loanRequest.getGroupCompanyId() == null) {
-                Loan optionalLoan = this.loanRepository.findByCustomerIdAndLoanProductId(loanRequest.getCustomerId(), loanRequest.getLoanProductId());
-                if(optionalLoan != null){
-                    optionalLoan.setName(loanRequest.getName());
-                    optionalLoan.setAmount(loanRequest.getAmount());
-                    optionalLoan.setTerm(loanRequest.getTerm());
-                    optionalLoan.setGracePeriod(loanRequest.getGracePeriod());
-                    optionalLoan.setGracePeriodType(loanRequest.getGracePeriodType());
-                    optionalLoan.setMonthlyFee(loanRequest.getMonthlyFee());
-                    optionalLoan.setDaysLate(loanRequest.getDaysLate());
-                    optionalLoan.setInterestRate(loanRequest.getInterestRate());
-                    optionalLoan.setRedraw(loanRequest.getRedraw());
-                    optionalLoan.setRedrawBalance(loanRequest.getRedrawBalance());
-                    return this.transformLoan(this.loanRepository.save(optionalLoan));
-                }else{
-                    throw new RuntimeException("Error al editar el préstamo");
-                }
-            } else if (loanRequest.getGroupCompanyId() != null && loanRequest.getCustomerId() == null){
-                Loan optionalLoan = this.loanRepository.findByGroupCompanyIdAndLoanProductId(loanRequest.getGroupCompanyId(), loanRequest.getLoanProductId());
-                if(optionalLoan != null){
-                    optionalLoan.setName(loanRequest.getName());
-                    optionalLoan.setAmount(loanRequest.getAmount());
-                    optionalLoan.setTerm(loanRequest.getTerm());
-                    optionalLoan.setGracePeriod(loanRequest.getGracePeriod());
-                    optionalLoan.setGracePeriodType(loanRequest.getGracePeriodType());
-                    optionalLoan.setMonthlyFee(loanRequest.getMonthlyFee());
-                    optionalLoan.setDaysLate(loanRequest.getDaysLate());
-                    optionalLoan.setInterestRate(loanRequest.getInterestRate());
-                    optionalLoan.setRedraw(loanRequest.getRedraw());
-                    optionalLoan.setRedrawBalance(loanRequest.getRedrawBalance());
-                    return this.transformLoan(this.loanRepository.save(optionalLoan));
-                }else {
-                    throw new RuntimeException("Error al editar el préstamo");
-                }
-            }else{
-                throw new RuntimeException();
-            }
-        }catch(RuntimeException re){
-            throw re;
-        }
-    }
-
-    @Transactional
-    public LoanRS statusLoan(LoanRQ loanRQ){
-        try{
-            Loan loanRequest = this.transformLoanRQ(loanRQ);
-            if (loanRequest.getCustomerId() != null && loanRequest.getGroupCompanyId() == null) {
-                Loan optionalLoan = this.loanRepository.findByCustomerIdAndLoanProductId(loanRequest.getCustomerId(), loanRequest.getLoanProductId());
-                if(optionalLoan != null){
-                    optionalLoan.setStatus(loanRequest.getStatus());
-                    return this.transformLoan(this.loanRepository.save(optionalLoan));
-                }else{
-                    throw new RuntimeException("Error al editar el estado del préstamo");
-                }
-            } else if (loanRequest.getGroupCompanyId() != null && loanRequest.getCustomerId() == null){
-                Loan optionalLoan = this.loanRepository.findByGroupCompanyIdAndLoanProductId(loanRequest.getGroupCompanyId(), loanRequest.getLoanProductId());
-                if(optionalLoan != null){
-                    optionalLoan.setStatus(loanRequest.getStatus());
-                    return this.transformLoan(this.loanRepository.save(optionalLoan));
-                }else {
-                    throw new RuntimeException("Error al editar el estado del préstamo");
-                }
-            }else{
-                throw new RuntimeException();
-            }
-        }catch(RuntimeException re){
-            throw re;
-        }
-    }
-
+    //Response Payment
     private LoanRS transformLoan(Loan loan) {
-        LoanRS loanRS = LoanRS
+        return LoanRS
                 .builder()
                 .groupCompanyId(loan.getGroupCompanyId())
                 .customerId(loan.getCustomerId())
-                .interestAccrueId(loan.getInterestAccrueId())
                 .guarantorId(loan.getGuarantorId())
                 .branchId(loan.getBranchId())
                 .loanProductId(loan.getLoanProductId())
@@ -166,20 +116,18 @@ public class LoanService {
                 .approvalDate(loan.getApprovalDate())
                 .dueDate(loan.getDueDate())
                 .monthlyFee(loan.getMonthlyFee())
+                .lastPaymentDueDate(loan.getLastPaymentDueDate())
                 .daysLate(loan.getDaysLate())
                 .interestRate(loan.getInterestRate())
-                .redraw(loan.getRedraw())
-                .redrawBalance(loan.getRedrawBalance())
                 .build();
-        return loanRS;
     }
 
+    //Request Loan
     private Loan transformLoanRQ(LoanRQ rq) {
-        Loan loan = Loan
+        return Loan
                 .builder()
                 .groupCompanyId(rq.getGroupCompanyId())
                 .customerId(rq.getCustomerId())
-                .interestAccrueId(rq.getInterestAccrueId())
                 .guarantorId(rq.getGuarantorId())
                 .branchId(rq.getBranchId())
                 .loanProductId(rq.getLoanProductId())
@@ -191,15 +139,69 @@ public class LoanService {
                 .term(rq.getTerm())
                 .gracePeriod(rq.getGracePeriod())
                 .gracePeriodType(rq.getGracePeriodType())
-                .approvalDate(rq.getApprovalDate())
-                .dueDate(rq.getDueDate())
                 .monthlyFee(rq.getMonthlyFee())
-                .daysLate(rq.getDaysLate())
                 .interestRate(rq.getInterestRate())
-                .redraw(rq.getRedraw())
-                .redrawBalance(rq.getRedrawBalance())
                 .build();
-        return loan;
     }
-    
+
+    //Response Payment
+    private PaymentRS transformToPaymentRS(Payment payment){
+        return PaymentRS.builder()
+                .id(payment.getId())
+                .loanId(payment.getLoanId())
+                .loanTransactionId(payment.getLoanTransactionId())
+                .type(payment.getType())
+                .reference(payment.getReference())
+                .status(payment.getStatus())
+                .creditorBankCode(payment.getCreditorBankCode())
+                .creditorAccount(payment.getCreditorAccount())
+                .debtorAccount(payment.getDebtorAccount())
+                .debtorBankCode(payment.getDebtorBankCode())
+                .build();
+    }
+
+    //Request payment
+    private Payment transformPaymentRQ(PaymentRQ paymentRQ){
+        return Payment.builder()
+                .loanId(paymentRQ.getLoanId())
+                .loanTransactionId(paymentRQ.getLoanTransactionId())
+                .type(paymentRQ.getType())
+                .reference(paymentRQ.getReference())
+                .status("PEN")
+                .creditorBankCode("BANQUI001") //Cambiar por un método o cambiar el string
+                .creditorAccount(paymentRQ.getCreditorAccount())
+                .debtorAccount(paymentRQ.getDebtorAccount())
+                .debtorBankCode("BANQUI001") //Cambiar por un método o cambiar el string
+                .build();
+    }
+
+    //Response LoanTransaction
+    private LoanTransactionRS transformtoLoanTransactionRS(LoanTransaction loanTransaction){
+        return LoanTransactionRS.builder()
+                .id(loanTransaction.getId())
+                .uniqueKey(loanTransaction.getUniqueKey())
+                .type(loanTransaction.getType())
+                .bookingDate(loanTransaction.getBookingDate())
+                .valueDate(loanTransaction.getValueDate())
+                .status(loanTransaction.getStatus())
+                .amount(loanTransaction.getAmount())
+                .applyTax(loanTransaction.getApplyTax())
+                .parentLoanTrxKey(loanTransaction.getParentLoanTrxKey())
+                .notes(loanTransaction.getNotes())
+                .build();
+    }
+
+    //Request LoanTransaction
+    private LoanTransaction transformLoanTransactionRQ(LoanTransactionRQ loanTransactionRQ){
+        return LoanTransaction.builder()
+                .type(loanTransactionRQ.getType())
+                .amount(loanTransactionRQ.getAmount())
+                .applyTax(loanTransactionRQ.getApplyTax())
+                .notes(loanTransactionRQ.getNotes())
+                .uniqueKey(UUID.randomUUID().toString())
+                .creationDate(new Date())
+                .bookingDate(new Date())
+                .valueDate(new Date())
+                .build();
+    }
 }

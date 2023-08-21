@@ -41,12 +41,14 @@ public class AssetService {
 
     @Transactional
     public AssetRS createAsset(AssetRQ assetRQ) {
-        try {
-            Asset asset = this.transformAssetRQ(assetRQ);
-            this.assetRepository.save(asset);
-            return this.transformAsset(asset);
-        } catch (RuntimeException rte) {
-            throw new RuntimeException("Error al crear el activo: " + rte.getMessage(), rte);
+        Asset newAsset = this.transformAssetRQ(assetRQ);
+        Asset existingAsset = assetRepository.findByAmountAndGuarantorCodeAndGuarantorTypeAndCurrency(
+                newAsset.getAmount(), newAsset.getGuarantorCode(), newAsset.getGuarantorType(), newAsset.getCurrency()
+        );
+        if(existingAsset == null ){
+            return this.transformAsset(assetRepository.save(newAsset));
+        }else{
+            throw new RuntimeException("Error al crear la garanti");
         }
     }
 

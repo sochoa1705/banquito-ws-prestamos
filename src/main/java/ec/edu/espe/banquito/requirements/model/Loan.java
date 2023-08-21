@@ -28,8 +28,8 @@ public class Loan {
     @Column(name = "CUSTOMER_ID")
     private Integer customerId;
 
-    @Column(name = "INTEREST_ACCRUE_ID", nullable = false)
-    private Integer interestAccrueId;
+    //@Column(name = "INTEREST_ACCRUE_ID", nullable = false)
+    //private Integer interestAccrueId;
 
     @Column(name = "GUARANTOR_ID")
     private Integer guarantorId;
@@ -70,26 +70,26 @@ public class Loan {
     @Column(name = "STATUS", length = 3)
     private String status;
 
+    @Temporal(TemporalType.DATE)
     @Column(name = "APPROVAL_DATE", nullable = false)
     private Date approvalDate;
 
+    @Temporal(TemporalType.DATE)
     @Column(name = "DUE_DATE", nullable = false)
     private Date dueDate;
 
     @Column(name = "MONTHLY_FEE", precision = 18, scale = 2, nullable = false)
     private BigDecimal monthlyFee;
 
+    @Temporal(TemporalType.DATE)
+    @Column(name = "LAST_PAYMENT_DUE_DATE")
+    private Date lastPaymentDueDate;
+
     @Column(name = "DAYS_LATE")
     private Integer daysLate;
 
     @Column(name = "INTEREST_RATE", precision = 18, scale = 2, nullable = false)
     private BigDecimal interestRate;
-
-    @Column(name = "REDRAW", nullable = false)
-    private Boolean redraw;
-
-    @Column(name = "REDRAW_BALANCE", precision = 18, scale = 2, nullable = false)
-    private BigDecimal redrawBalance;
 
     @Version
     @Column(name = "VERSION" , nullable = false)
@@ -99,9 +99,9 @@ public class Loan {
 
     //Relacion Customer
 
-    @ManyToOne
-    @JoinColumn(name = "INTEREST_ACCRUE_ID", referencedColumnName = "INTEREST_ACCRUE_ID", insertable = false, updatable = false, nullable = false)
-    private InterestAccrue interestAccrue;
+    //@ManyToOne
+    //@JoinColumn(name = "INTEREST_ACCRUE_ID", referencedColumnName = "INTEREST_ACCRUE_ID", insertable = false, updatable = false, nullable = false)
+    //private InterestAccrue interestAccrue;
 
     @ManyToOne
     @JoinColumn(name = "GUARANTOR_ID", referencedColumnName = "GUARANTOR_ID", insertable = false, updatable = false, nullable = false)

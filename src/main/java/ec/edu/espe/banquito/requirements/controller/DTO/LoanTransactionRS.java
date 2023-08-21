@@ -10,7 +10,6 @@ import lombok.Data;
 @Data
 @Builder
 public class LoanTransactionRS {
-
     private Integer id;
     private String uniqueKey;
     private String type;
@@ -21,5 +20,4 @@ public class LoanTransactionRS {
     private Boolean applyTax;
     private String parentLoanTrxKey;
     private String notes;
-
 }

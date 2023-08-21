@@ -8,7 +8,9 @@ import ec.edu.espe.banquito.requirements.model.Guarantor;
 
 public interface GuarantorRepository extends JpaRepository<Guarantor, Integer> {
 
-    Guarantor findByCode(String code);
+    Guarantor findByCodeAndType(String code, String type);
+
+    Guarantor findByCodeAndTypeAndNameAndStatus(String code, String type, String name, String status);
 
     Guarantor findByName(String name);
 

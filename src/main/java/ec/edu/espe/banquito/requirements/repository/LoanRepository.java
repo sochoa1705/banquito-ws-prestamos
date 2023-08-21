@@ -12,5 +12,14 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     Loan findByUniqueKey(String uniqueId);
     Loan findByCustomerIdAndLoanProductId(Integer customerId, Integer loanProductId);
     Loan findByGroupCompanyIdAndLoanProductId(Integer groupCompanyId, Integer loanProductId);
-    
+
+    Loan findByGroupCompanyIdAndLoanProductIdAndLoanHolderTypeAndLoanHolderCode(Integer groupCompanyId,
+                                                                                Integer loanProductId,
+                                                                                String loanHolderType,
+                                                                                String loanHolderCode);
+
+    Loan findByCustomerIdAndLoanProductIdAndLoanHolderTypeAndLoanHolderCode(Integer customerId,
+                                                                                Integer loanProductId,
+                                                                                String loanHolderType,
+                                                                                String loanHolderCode);
 }

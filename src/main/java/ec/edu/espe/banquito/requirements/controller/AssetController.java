@@ -21,7 +21,7 @@ import ec.edu.espe.banquito.requirements.service.AssetService;
 
 @CrossOrigin
 @RestController
-@RequestMapping("/api/v1/requirements/assets")
+@RequestMapping("/api/v1/instrumentation/assets")
 public class AssetController {
 
     private final AssetService assetService;
@@ -63,16 +63,6 @@ public class AssetController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-    // @DeleteMapping("/{assetId}")
-    // public ResponseEntity<String> deleteAsset(@PathVariable Integer assetId) {
-    //     try {
-    //         this.assetService.deleteAsset(assetId);
-    //         return ResponseEntity.ok("Activo eliminado correctamente");
-    //     } catch (RuntimeException rte) {
-    //         return ResponseEntity.badRequest().body("No se pudo eliminar el activo: " + rte.getMessage());
-    //     }
-    // }
 
     @DeleteMapping("/{assetId}")
     public ResponseEntity<AssetRS> delete(@PathVariable Integer assetId) {
