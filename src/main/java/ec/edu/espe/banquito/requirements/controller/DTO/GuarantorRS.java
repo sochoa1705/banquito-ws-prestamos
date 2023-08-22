@@ -11,5 +11,6 @@ public class GuarantorRS {
     private String code;
     private String type;
     private String name;
+    private String status;
 
 }

@@ -11,8 +11,9 @@ public class AssetRS {
 
     private Integer id;
     private BigDecimal amount;
-    private String guarantorCode;
-    private String guarantorType;
+    private String type;
+    private String name;
     private String currency;
+    private String status;
 
 }

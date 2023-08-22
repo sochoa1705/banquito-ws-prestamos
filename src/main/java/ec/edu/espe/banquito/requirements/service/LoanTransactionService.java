@@ -35,20 +35,6 @@ public class LoanTransactionService {
         }
     }
 
-    @Transactional
-    public LoanTransactionRS update(LoanTransactionRQ loanTransactionRQ){
-        LoanTransaction loanTransaction = loanTransactionRepository.findByUniqueKey(loanTransactionRQ.getUniqueKey());
-        if(loanTransaction != null){
-            LoanTransaction updateLoanTransaction = this.transformLoanTransactionRQ(loanTransactionRQ);
-            loanTransaction.setStatus(updateLoanTransaction.getStatus());
-            loanTransaction.setAmount(updateLoanTransaction.getAmount());
-            loanTransaction.setNotes(updateLoanTransaction.getNotes());
-            return this.transformtoLoanTransactionRS(loanTransactionRepository.save(loanTransaction));
-        }else{
-            throw  new RuntimeException("Transaccion no encontrada");
-        }
-    }
-
     private List<LoanTransactionRS> transactionToListLoanTransactionRS(List<LoanTransaction> loanTransactions){
         List<LoanTransactionRS> loanTransactionRSList = new ArrayList<>();
         for(LoanTransaction loanTransaction : loanTransactions){
@@ -85,15 +71,10 @@ public class LoanTransactionService {
                 .build();
     }
 
-    //Request
+    //Request REVISAR
     private LoanTransaction transformLoanTransactionRQ(LoanTransactionRQ loanTransactionRQ){
         return LoanTransaction.builder()
-                .type(loanTransactionRQ.getType())
-                .status(loanTransactionRQ.getStatus())
-                .amount(loanTransactionRQ.getAmount())
-                .applyTax(loanTransactionRQ.getApplyTax())
-                .parentLoanTrxKey(loanTransactionRQ.getParentLoanTrxKey())
-                .notes(loanTransactionRQ.getNotes())
+
                 .uniqueKey(UUID.randomUUID().toString())
                 .creationDate(new Date())
                 .bookingDate(new Date())

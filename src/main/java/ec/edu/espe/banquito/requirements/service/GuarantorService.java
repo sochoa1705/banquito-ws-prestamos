@@ -21,8 +21,8 @@ public class GuarantorService {
         this.guarantorRepository = guarantorRepository;
     }
 
-    public GuarantorRS obtainByCode(String code) {
-        Guarantor guarantor = this.guarantorRepository.findByCode(code);
+    public GuarantorRS obtainByCodeAndType(String code, String type) {
+        Guarantor guarantor = this.guarantorRepository.findByCodeAndType(code, type);
         return this.transformGuarantor(guarantor);
     }
 
@@ -30,7 +30,7 @@ public class GuarantorService {
         Guarantor guarantor = this.guarantorRepository.findByName(nameGuarantor);
         return this.transformGuarantor(guarantor);
     }
-
+    //No se usa
     public List<GuarantorRS> getAllGuarantors() {
         List<Guarantor> countries = this.guarantorRepository.findAll();
         List<GuarantorRS> countriesList = new ArrayList<>();
@@ -41,22 +41,29 @@ public class GuarantorService {
     }
 
     @Transactional
-    public GuarantorRS createGuarantor(GuarantorRQ guarantorRQ) {
-        try {
-            Guarantor guarantor = this.transformGuarantorRQ(guarantorRQ);
-            this.guarantorRepository.save(guarantor);
-            return this.transformGuarantor(guarantor);
-        } catch (RuntimeException rte) {
-            throw new RuntimeException("Error al crear el garante: " + rte.getMessage(), rte);
+    public GuarantorRS create(GuarantorRQ guarantorRQ) {
+        Guarantor newGuarantor = this.transformGuarantorRQ(guarantorRQ);
+        Guarantor existingGuarantor = this.guarantorRepository.findByCodeAndTypeAndNameAndStatus(
+                newGuarantor.getCode(), newGuarantor.getType(), newGuarantor.getName(), "ACT"
+        );
+        if(existingGuarantor == null){
+            newGuarantor.setStatus("ACT");
+            return this.transformGuarantor(this.guarantorRepository.save(newGuarantor));
+        }else{
+            throw new RuntimeException("Garante ya existe");
         }
     }
 
+    //No se usa
     @Transactional
     public GuarantorRS updateGuarantor(GuarantorRQ countryRQ) {
 
         Guarantor guarantor = this.transformGuarantorRQ(countryRQ);
         try {
-            Guarantor guarantorUpdate = this.guarantorRepository.findByCode(guarantor.getCode());
+            Guarantor guarantorUpdate = this.guarantorRepository.findByCodeAndType(
+                    guarantor.getCode(),
+                    guarantor.getType()
+            );
             if (guarantorUpdate == null) {
                 throw new RuntimeException("Garante " + guarantor.getName() + " no encontrando");
             } else {
@@ -72,6 +79,7 @@ public class GuarantorService {
         }
     }
 
+    //No se usa
     @Transactional
     public void delete(Integer id) {
         try {
@@ -87,13 +95,13 @@ public class GuarantorService {
     }
 
     @Transactional
-    public GuarantorRS logicDelete(String code){
+    public GuarantorRS logicDelete(String code, String type){
         try {
-            Guarantor countryLogicDelete = this.guarantorRepository.findByCode(code);
-            if(countryLogicDelete != null) {
-                countryLogicDelete.setStatus("INA");
-                this.guarantorRepository.save(countryLogicDelete);
-                return this.transformGuarantor(countryLogicDelete);
+            Guarantor guarantor = this.guarantorRepository.findByCodeAndType(code, type);
+            if(guarantor != null) {
+                guarantor.setStatus("INA");
+                this.guarantorRepository.save(guarantor);
+                return this.transformGuarantor(guarantor);
             }else {
                 throw new RuntimeException("Garante no encontrado: " + code);
             }
@@ -105,9 +113,9 @@ public class GuarantorService {
     private Guarantor transformGuarantorRQ(GuarantorRQ rq) {
         Guarantor guarantor = Guarantor
                 .builder()
-                .name(rq.getName())
-                .type(rq.getType())
                 .code(rq.getCode())
+                .type(rq.getType())
+                .name(rq.getName())
                 .build();
         return guarantor;
     }
@@ -116,9 +124,10 @@ public class GuarantorService {
         GuarantorRS guarantorRS = GuarantorRS
                 .builder()
                 .id(guarantor.getId())
-                .name(guarantor.getName())
-                .type(guarantor.getType())
                 .code(guarantor.getCode())
+                .type(guarantor.getType())
+                .name(guarantor.getName())
+                .status(guarantor.getStatus())
                 .build();
         return guarantorRS;
     }

@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 @Entity
 @Data
 @AllArgsConstructor
@@ -25,6 +27,9 @@ public class Payment {
 
     @Column(name = "LOAN_TRANSACTION_ID", nullable = false)
     private Integer loanTransactionId;
+
+    @Column(name = "ACCOUNT_TRANSACTION_ID", nullable = false)
+    private Integer accountTransactionId;
 
     @Column(name = "TYPE", length = 12, nullable = false)
     private String type;
@@ -46,6 +51,10 @@ public class Payment {
 
     @Column(name = "DEBTOR_BANK_CODE", length = 20, nullable = false)
     private String debtorBankCode;
+
+    @Temporal(TemporalType.DATE)
+    @Column(name = "DUE_DATE", nullable = false)
+    private Date dueDate;
 
     @Version
     @Column(name = "VERSION", nullable = false)

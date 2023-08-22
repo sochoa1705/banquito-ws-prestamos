@@ -10,9 +10,9 @@ import lombok.Data;
 @Builder
 public class LoanRS {
 
+    private Integer id;
     private Integer groupCompanyId;
     private Integer customerId;
-    private Integer interestAccrueId;
     private Integer guarantorId;
     private Integer branchId;
     private Integer loanProductId;
@@ -28,9 +28,9 @@ public class LoanRS {
     private String status;
     private Date approvalDate;
     private Date dueDate;
-    private BigDecimal monthlyFee;
+    private Date lastPaymentDueDate;
     private Integer daysLate;
     private BigDecimal interestRate;
-    private Boolean redraw;
-    private BigDecimal redrawBalance;
+    private BigDecimal quote;
+
 }

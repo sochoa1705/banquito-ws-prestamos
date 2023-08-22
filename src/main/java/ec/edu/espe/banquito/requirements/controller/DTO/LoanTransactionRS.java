@@ -14,6 +14,7 @@ public class LoanTransactionRS {
     private Integer id;
     private String uniqueKey;
     private String type;
+    private Date creationDate;
     private Date bookingDate;
     private Date valueDate;
     private String status;
@@ -21,5 +22,4 @@ public class LoanTransactionRS {
     private Boolean applyTax;
     private String parentLoanTrxKey;
     private String notes;
-
 }

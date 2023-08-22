@@ -10,8 +10,8 @@ import lombok.Data;
 public class AssetRQ {
 
     private BigDecimal amount;
-    private String guarantorCode;
-    private String guarantorType;
+    private String type;
+    private String name;
     private String currency;
 
 }

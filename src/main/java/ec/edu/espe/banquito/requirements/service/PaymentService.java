@@ -39,6 +39,7 @@ public class PaymentService {
         }
     }
 
+    /*
     @Transactional
     public PaymentRS update(PaymentRQ paymentRQ){
         Optional<Payment> paymentOptional = paymentRepository.findById(paymentRQ.getId());
@@ -52,6 +53,8 @@ public class PaymentService {
             throw new RuntimeException("Pago no encontrado");
         }
     }
+
+     */
 
     private List<PaymentRS> transformToListPaymentRS(List<Payment> payments){
         List<PaymentRS> paymentRSList = new ArrayList<>();
@@ -86,16 +89,14 @@ public class PaymentService {
                 .creditorAccount(payment.getCreditorAccount())
                 .debtorAccount(payment.getDebtorAccount())
                 .debtorBankCode(payment.getDebtorBankCode())
+                .dueDate(payment.getDueDate())
                 .build();
     }
 
     //Request
     private Payment transformPaymentRQ(PaymentRQ paymentRQ){
         return Payment.builder()
-                .loanId(paymentRQ.getLoanId())
-                .loanTransactionId(paymentRQ.getLoanTransactionId())
-                .type(paymentRQ.getType())
-                .reference(paymentRQ.getReference())
+
                 .status("PEN")
                 .creditorBankCode("BANQUI001") //Cambiar por un método o cambiar el string
                 .creditorAccount(paymentRQ.getCreditorAccount())

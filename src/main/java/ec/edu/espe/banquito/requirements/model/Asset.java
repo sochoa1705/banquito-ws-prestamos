@@ -30,11 +30,11 @@ public class Asset {
     @Column(name = "AMOUNT", precision = 18, scale = 2, nullable = false)
     private BigDecimal amount;
 
-    @Column(name = "GUARANTOR_CODE", length = 36, nullable = false)
-    private String guarantorCode;
+    @Column(name = "NAME", length = 50, nullable = false)
+    private String name;
 
-    @Column(name = "GUARANTOR_TYPE", length = 3, nullable = false)
-    private String guarantorType;
+    @Column(name = "TYPE", length = 3)
+    private String type;
 
     @Column(name = "CURRENCY", length = 3)
     private String currency;

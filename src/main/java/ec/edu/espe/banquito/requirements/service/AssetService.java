@@ -38,17 +38,21 @@ public class AssetService {
         }
         return assetsList;
     }
-
+/*
     @Transactional
     public AssetRS createAsset(AssetRQ assetRQ) {
-        try {
-            Asset asset = this.transformAssetRQ(assetRQ);
-            this.assetRepository.save(asset);
-            return this.transformAsset(asset);
-        } catch (RuntimeException rte) {
-            throw new RuntimeException("Error al crear el activo: " + rte.getMessage(), rte);
+        Asset newAsset = this.transformAssetRQ(assetRQ);
+        Asset existingAsset = assetRepository.findByAmountAndGuarantorCodeAndGuarantorTypeAndCurrency(
+                newAsset.getAmount(), newAsset.getGuarantorCode(), newAsset.getGuarantorType(), newAsset.getCurrency()
+        );
+        if(existingAsset == null ){
+            return this.transformAsset(assetRepository.save(newAsset));
+        }else{
+            throw new RuntimeException("Error al crear la garanti");
         }
     }
+
+ */
 
     @Transactional
     public AssetRS updateAsset(AssetUpdateRQ rq) {
@@ -62,8 +66,7 @@ public class AssetService {
 
             assetTmp.setAmount(asset.getAmount());
             assetTmp.setCurrency(asset.getCurrency());
-            assetTmp.setGuarantorCode(asset.getGuarantorCode());
-            assetTmp.setGuarantorType(asset.getGuarantorType());
+
 
             this.assetRepository.save(assetTmp);
 
@@ -112,9 +115,10 @@ public class AssetService {
                 .builder()
                 .id(asset.getId())
                 .amount(asset.getAmount())
-                .guarantorCode(asset.getGuarantorCode())
-                .guarantorType(asset.getGuarantorType())
+                .type(asset.getType())
+                .name(asset.getName())
                 .currency(asset.getCurrency())
+                .status(asset.getStatus())
                 .build();
         return assetRS;
     }
@@ -123,20 +127,19 @@ public class AssetService {
         Asset branch = Asset
                 .builder()
                 .amount(rq.getAmount())
-                .guarantorCode(rq.getGuarantorCode())
-                .guarantorType(rq.getGuarantorType())
+                .type(rq.getType())
+                .name(rq.getName())
                 .currency(rq.getCurrency())
                 .build();
         return branch;
     }
 
+    //REVISAR
     private Asset transformOfAssetUpdateRQ(AssetUpdateRQ rq) {
         Asset branch = Asset
                 .builder()
                 .id(rq.getId())
                 .amount(rq.getAmount())
-                .guarantorCode(rq.getGuarantorCode())
-                .guarantorType(rq.getGuarantorType())
                 .currency(rq.getCurrency())
                 .build();
         return branch;
