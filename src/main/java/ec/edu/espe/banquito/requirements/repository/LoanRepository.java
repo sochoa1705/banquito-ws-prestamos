@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import ec.edu.espe.banquito.requirements.model.Loan;
 
 
-public interface LoanRepository extends JpaRepository<Loan, Long> {
+public interface LoanRepository extends JpaRepository<Loan, Integer> {
 
     Loan findByGroupCompanyId(Integer groupCompanyId);
     Loan findByCustomerId(Integer customerId);

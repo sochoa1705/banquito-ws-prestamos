@@ -28,10 +28,10 @@ public class Payment {
     @Column(name = "LOAN_TRANSACTION_ID", nullable = false)
     private Integer loanTransactionId;
 
-    @Column(name = "ACCOUNT_TRANSACTION_ID", nullable = false)
+    @Column(name = "ACCOUNT_TRANSACTION_ID")
     private Integer accountTransactionId;
 
-    @Column(name = "TYPE", length = 12, nullable = false)
+    @Column(name = "TYPE", length = 3, nullable = false)
     private String type;
 
     @Column(name = "REFERENCE", length = 50, nullable = false)
@@ -40,16 +40,16 @@ public class Payment {
     @Column(name = "STATUS", length = 3, nullable = false)
     private String status;
 
-    @Column(name = "CREDITOR_BANK_CODE", length = 20, nullable = false)
+    @Column(name = "CREDITOR_BANK_CODE", length = 20)
     private String creditorBankCode;
 
-    @Column(name = "CREDITOR_ACCOUNT", length = 16, nullable = false)
+    @Column(name = "CREDITOR_ACCOUNT", length = 16)
     private String creditorAccount;
 
-    @Column(name = "DEBTOR_ACCOUNT", length = 16, nullable = false)
+    @Column(name = "DEBTOR_ACCOUNT", length = 16)
     private String debtorAccount;
 
-    @Column(name = "DEBTOR_BANK_CODE", length = 20, nullable = false)
+    @Column(name = "DEBTOR_BANK_CODE", length = 20)
     private String debtorBankCode;
 
     @Temporal(TemporalType.DATE)

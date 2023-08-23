@@ -1,10 +1,7 @@
 package ec.edu.espe.banquito.requirements.controller;
 
 
-import ec.edu.espe.banquito.requirements.controller.DTO.LoanRQ;
-import ec.edu.espe.banquito.requirements.controller.DTO.LoanRS;
-import ec.edu.espe.banquito.requirements.controller.DTO.LoanTransactionRQ;
-import ec.edu.espe.banquito.requirements.controller.DTO.PaymentRQ;
+import ec.edu.espe.banquito.requirements.controller.DTO.*;
 import ec.edu.espe.banquito.requirements.service.LoanService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,14 +33,12 @@ public class LoanController {
     }
 
     @PostMapping("/loan-create")
-    public ResponseEntity<?> createLoan(@RequestBody Map<String, Object> objetos){
-        LoanRQ loanRQ = (LoanRQ) objetos.get("loanRQ");
-        LoanTransactionRQ loanTransactionRQ = (LoanTransactionRQ) objetos.get("loanTransactionRQ");
-        PaymentRQ paymentRQ = (PaymentRQ) objetos.get("paymentRQ");
+    public ResponseEntity<?> createLoan(@RequestBody LoanProcessRQ loanProcessRQ){
+
         try{
-            return ResponseEntity.ok(this.loanService.create(loanRQ, paymentRQ, loanTransactionRQ));
+            return ResponseEntity.ok(this.loanService.create(loanProcessRQ));
         }catch (RuntimeException rte){
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body("No entro");
         }
     }
 

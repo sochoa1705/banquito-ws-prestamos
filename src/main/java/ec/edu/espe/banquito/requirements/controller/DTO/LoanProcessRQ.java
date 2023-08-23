@@ -34,10 +34,8 @@ public class LoanProcessRQ {
     private BigDecimal loanInterestRate;
     private BigDecimal loanQuote;
     //Payment
-    private String paymentCreditorBankCode;
-    private String paymentCreditorAccount;
-    private String paymentDebtorAccount;
-    private String paymentDebtorBankCode;
+    private String bankCode;
+    private String account;
     //LoanTransaction
 
 }

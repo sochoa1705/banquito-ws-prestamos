@@ -27,7 +27,7 @@ public class LoanTransaction {
     @Column(name = "UNIQUE_KEY", length = 36, nullable = false)
     private String uniqueKey;
 
-    @Column(name = "TYPE", length = 12, nullable = false)
+    @Column(name = "TYPE", length = 3, nullable = false)
     private String type;
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -48,10 +48,10 @@ public class LoanTransaction {
     @Column(name = "AMOUNT", precision = 18, scale = 2, nullable = false)
     private BigDecimal amount;
 
-    @Column(name = "APPLY_TAX", nullable = false)
+    @Column(name = "APPLY_TAX")
     private Boolean applyTax;
 
-    @Column(name = "PARENT_LOAN_TRX_KEY", length = 36, nullable = false)
+    @Column(name = "PARENT_LOAN_TRX_KEY", length = 36)
     private String parentLoanTrxKey;
 
     @Column(name = "NOTES", length = 200, nullable = false)

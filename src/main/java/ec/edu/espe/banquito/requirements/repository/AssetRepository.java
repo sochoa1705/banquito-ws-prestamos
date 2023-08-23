@@ -7,6 +7,5 @@ import ec.edu.espe.banquito.requirements.model.Asset;
 import java.math.BigDecimal;
 
 public interface AssetRepository extends JpaRepository<Asset, Integer> {
-    Asset findByAmountAndGuarantorCodeAndGuarantorTypeAndCurrency(BigDecimal amount, String guarantorCode,
-                                                                  String GuarantorType, String Currency);
+
 }
