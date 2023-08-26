@@ -12,7 +12,7 @@ public class PaymentRS {
     private Integer id;
     private Integer loanId;
     private Integer loanTransactionId;
-    private Integer accountTransactionId;
+    private String accountTransactionId;
     private String type;
     private String reference;
     private String status;

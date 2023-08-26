@@ -10,10 +10,10 @@ import lombok.Data;
 @Builder
 public class LoanRQ {
 
-    private Integer groupCompanyId;
-    private Integer customerId;
-    private Integer branchId;
-    private Integer loanProductId;
+    private String groupCompanyId;
+    private String customerId;
+    private String branchId;
+    private String loanProductId;
     private String loanHolderType;
     private String loanHolderCode;
     private String name;

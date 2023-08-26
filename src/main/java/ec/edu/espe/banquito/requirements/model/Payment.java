@@ -28,8 +28,8 @@ public class Payment {
     @Column(name = "LOAN_TRANSACTION_ID", nullable = false)
     private Integer loanTransactionId;
 
-    @Column(name = "ACCOUNT_TRANSACTION_ID")
-    private Integer accountTransactionId;
+    @Column(name = "ACCOUNT_TRANSACTION_ID", length = 36)
+    private String accountTransactionId;
 
     @Column(name = "TYPE", length = 3, nullable = false)
     private String type;

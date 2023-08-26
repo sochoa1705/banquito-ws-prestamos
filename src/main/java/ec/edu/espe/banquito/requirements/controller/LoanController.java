@@ -21,24 +21,23 @@ public class LoanController {
     }
 
     @GetMapping("customerId/{customerId}")
-    public ResponseEntity<LoanRS> getLoanByCustomerId(@PathVariable Integer customerId) {
+    public ResponseEntity<LoanRS> getLoanByCustomerId(@PathVariable String customerId) {
         LoanRS rs = this.loanService.getLoanByCustomerId(customerId);
         return ResponseEntity.ok(rs);
     }
 
     @GetMapping("groupCompanyId/{groupCompanyId}")
-    public ResponseEntity<LoanRS> getLoanByGroupCompanyId(@PathVariable Integer groupCompanyId) {
+    public ResponseEntity<LoanRS> getLoanByGroupCompanyId(@PathVariable String groupCompanyId) {
         LoanRS rs = this.loanService.getLoanByGroupCompanyId(groupCompanyId);
         return ResponseEntity.ok(rs);
     }
 
     @PostMapping("/loan-create")
     public ResponseEntity<?> createLoan(@RequestBody LoanProcessRQ loanProcessRQ){
-
         try{
             return ResponseEntity.ok(this.loanService.create(loanProcessRQ));
         }catch (RuntimeException rte){
-            return ResponseEntity.badRequest().body("No entro");
+            return ResponseEntity.badRequest().body(rte.getMessage());
         }
     }
 

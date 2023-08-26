@@ -3,7 +3,9 @@ package ec.edu.espe.banquito.requirements.service;
 import ec.edu.espe.banquito.requirements.controller.DTO.*;
 import ec.edu.espe.banquito.requirements.model.*;
 import ec.edu.espe.banquito.requirements.repository.*;
+import ec.edu.espe.banquito.requirements.service.ExternalRestServices.AccountTransactionRestService;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,6 +13,7 @@ import java.util.*;
 
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
 public class LoanService {
     private final LoanRepository loanRepository;
@@ -18,75 +21,34 @@ public class LoanService {
     private final LoanTransactionRepository loanTransactionRepository;
     private final AssetRepository assetRepository;
     private final GuarantorRepository guarantorRepository;
+    private final AccountTransactionRestService accountTransactionRestService;
 
-    public LoanService(LoanRepository loanRepository, PaymentRepository paymentRepository,
-                       LoanTransactionRepository loanTransactionRepository, AssetRepository assetRepository,
-                       GuarantorRepository guarantorRepository) {
-        this.loanRepository = loanRepository;
-        this.paymentRepository = paymentRepository;
-        this.loanTransactionRepository = loanTransactionRepository;
-        this.assetRepository = assetRepository;
-        this.guarantorRepository = guarantorRepository;
-    }
 
-    public LoanRS getLoanByCustomerId(Integer customerId){
+    public LoanRS getLoanByCustomerId(String customerId){
         Loan optionalLoan = loanRepository.findByCustomerId(customerId);
         return this.transformLoan(optionalLoan);
     }
 
-    public LoanRS getLoanByGroupCompanyId(Integer groupCompanyId){
+    public LoanRS getLoanByGroupCompanyId(String groupCompanyId){
         Loan optionalLoan = loanRepository.findByGroupCompanyId(groupCompanyId);
         return this.transformLoan(optionalLoan);
     }
 
     @Transactional
     public LoanRS create(LoanProcessRQ loanProcessRQ) {
-        log.info("Iniciando método create...");
-        /* Creación del guarantor */
-        Guarantor createdGuarantor = null;
-        if(loanProcessRQ.getGuarantorCode() != null && loanProcessRQ.getGuarantorType() != null
-                && loanProcessRQ.getGuarantorName() != null){
-            createdGuarantor = guarantorRepository.save(
-                            Guarantor.builder()
-                            .code(loanProcessRQ.getGuarantorCode())
-                            .type(loanProcessRQ.getGuarantorType())
-                            .name(loanProcessRQ.getGuarantorName())
-                            .status("ACT")
-                            .build());
-        }else{
-            throw new RuntimeException("Error guarantor");
-        }
-        log.info("Punto A: Después de la creación del guarantor...");
-        /* Creación de la garantia */
-        Asset createdAsset = null;
-        if(loanProcessRQ.getAssetAmount() != null && loanProcessRQ.getAssetType() != null
-                && loanProcessRQ.getAssetName() != null && loanProcessRQ.getAssetCurrency() != null){
-            createdAsset = assetRepository.save(
-                            Asset.builder()
-                            .amount(loanProcessRQ.getAssetAmount())
-                            .type(loanProcessRQ.getAssetType())
-                            .name(loanProcessRQ.getAssetName())
-                            .currency(loanProcessRQ.getAssetCurrency())
-                            .status("ACT")
-                            .build());
-        }else{
-            throw new RuntimeException("Error Assets");
-        }
-        log.info("Punto B: Después de la creación de la garantía...");
-        /* Validación de que solo debe recibir un Group Comany Id ó CustomerId*/
+
+        /* Validación campos GroupCompanyId o CustomerId */
         if((loanProcessRQ.getGroupCompanyId() == null && loanProcessRQ.getCustomerId() == null)
-        || (loanProcessRQ.getGroupCompanyId() != null && loanProcessRQ.getCustomerId() != null)){
-            throw new RuntimeException();
+                || (loanProcessRQ.getGroupCompanyId() != null && loanProcessRQ.getCustomerId() != null)){
+            throw new RuntimeException("Los dos ids vacios o llenos, debe solo uno estar lleno");
         }
 
         /* Crear objeto prestamo */
         Loan newLoan = Loan.builder()
                 .groupCompanyId(loanProcessRQ.getGroupCompanyId())
                 .customerId(loanProcessRQ.getCustomerId())
-                .guarantorId(createdGuarantor.getId())
                 .branchId(loanProcessRQ.getBranchId())
                 .loanProductId(loanProcessRQ.getLoanProductId())
-                .assetId(createdAsset.getId())
                 .loanHolderType(loanProcessRQ.getLoanHolderType())
                 .loanHolderCode(loanProcessRQ.getLoanHolderCode())
                 .name(loanProcessRQ.getLoanName())
@@ -106,13 +68,19 @@ public class LoanService {
                 newLoan.getGroupCompanyId(), newLoan.getLoanProductId(), newLoan.getLoanHolderType(), newLoan.getLoanHolderCode()
         );
 
-        /* Verificación si existe para Customer ó Group Company */
-        if ((existLoanCustomer != null && existLoanGroupCompany == null) ||
-                (existLoanCustomer == null && existLoanGroupCompany != null)) {
+        if (existLoanCustomer != null || existLoanGroupCompany != null) {
             throw new RuntimeException("Ya existe prestamo");
         }
 
+        /* Creación del guarantor */
+        Guarantor createdGuarantor = this.createGuarantor(loanProcessRQ);
+
+        /* Creación del activo */
+        Asset createdAsset = this.createAsset(loanProcessRQ);
+
         /* Detalles del prestamo */
+        newLoan.setGuarantorId(createdGuarantor.getId());
+        newLoan.setAssetId(createdAsset.getId());
         newLoan.setUniqueKey(UUID.randomUUID().toString());
         newLoan.setStatus("APR");
         Calendar calendar = Calendar.getInstance();
@@ -121,8 +89,11 @@ public class LoanService {
         newLoan.setApprovalDate(new Date());
         newLoan.setDueDate(newDate);
 
+        /* Guardo loan */
         Loan createdLoan = loanRepository.save(newLoan);
         log.info("Punto C: Después de la creación del prestamo...");
+
+        /* Creación objeto loanTransaction - desembolso */
         LoanTransaction newLoanTransaction = LoanTransaction.builder()
                 .uniqueKey(UUID.randomUUID().toString())
                 .type("DIS") //Fondos del prestamo entregado al cliente
@@ -135,12 +106,17 @@ public class LoanService {
                 .notes("Fondos prestamo entregado al cliente")
                 .build();
 
+        /* valido si ya se realizo la transacción */
         LoanTransaction firstTransaction = loanTransactionRepository.findByUniqueKey(newLoanTransaction.getUniqueKey());
         log.info("Punto D: Después de la asignacion de campos en loan transaction...");
         if(firstTransaction != null){
-            throw new RuntimeException("Ya existe");
+            throw new RuntimeException("Ya existe loan transaction");
         }
+
+        /* Guardar loan-transaction */
         LoanTransaction createdLoanTransaction = loanTransactionRepository.save(newLoanTransaction);
+
+        /* Crear objeto payment */
         log.info("Punto E: Después de la creación de la transacción de loan...");
         Payment createdPayment = null;
         if(loanProcessRQ.getBankCode() != null && loanProcessRQ.getAccount() != null){
@@ -158,26 +134,93 @@ public class LoanService {
                     .dueDate(new Date())
                     .build();
             log.info("Punto G: Después de la asignación del newPayment...");
-            System.out.println("Contenido de newPayment: " + newPayment);
-            try{
-                createdPayment = paymentRepository.save(newPayment);
-                log.info("Punto H: Después de la creación del Payment...");
-            } catch (Exception e){
-                log.error("Error al guardar el nuevo pago: " + e.getMessage(), e);
-                throw new RuntimeException("Error payment");
-            }
-            log.info("Punto I: Después del try-catch del payment...");
+            /* Guardar el payment */
+            createdPayment = paymentRepository.save(newPayment);
         }else{
             throw new RuntimeException("Error payment");
         }
+
+        //Desembolso del prestamo - Pendiente asignación del uuid al createdPayment
+        accountTransactionRestService.sendAccountTransactionCreationRequest(createdPayment.getCreditorAccount(),
+                createdPayment.getDebtorAccount(), "CRED", null, createdLoan.getAmount().floatValue(),"Desembolso prestamo");
+
+        /* Suponiendo que paso sin problemas */
+
+        //Generación de primer pago del cliente
+        LoanTransaction fisrtPaymenLoantransaction = LoanTransaction.builder()
+                .uniqueKey(UUID.randomUUID().toString())
+                .type("REP") //Fondos del prestamo entregado al cliente
+                .creationDate(new Date())
+                .bookingDate(new Date())
+                .valueDate(new Date())
+                .status("PEN")
+                .amount(createdLoan.getQuote())
+                .applyTax(false)
+                .notes("Primer pago del cliente")
+                .parentLoanTrxKey(createdLoanTransaction.getUniqueKey())
+                .build();
+
+        LoanTransaction saveFisrtPaymenLoantransaction = loanTransactionRepository.save(fisrtPaymenLoantransaction);
+
+        /* Calculo de fecha primer pago */
+        Calendar calendar1 = Calendar.getInstance();
+        calendar1.add(Calendar.MONTH, newLoan.getGracePeriod()+1);
+        /* Creación objeto primer pago */
+        Payment firstPayment = Payment.builder()
+                .loanId(createdLoan.getId())
+                .loanTransactionId(saveFisrtPaymenLoantransaction.getId())
+                .type("PRI")
+                .reference("Pago primer mes al banco")
+                .status("PEN")
+                .creditorAccount(null)
+                .creditorBankCode(null)
+                .debtorAccount(loanProcessRQ.getAccount())
+                .debtorBankCode(loanProcessRQ.getBankCode())
+                .dueDate(calendar1.getTime())
+                .build();
+
         return this.transformLoan(createdLoan);
     }
 
-    //Response Payment
+    //Creación del garante
+    private Guarantor createGuarantor(LoanProcessRQ loanProcessRQ){
+        if (loanProcessRQ.getGuarantorCode() != null &&
+                loanProcessRQ.getGuarantorType() != null &&
+                loanProcessRQ.getGuarantorName() != null) {
+            return guarantorRepository.save(
+                    Guarantor.builder()
+                            .code(loanProcessRQ.getGuarantorCode())
+                            .type(loanProcessRQ.getGuarantorType())
+                            .name(loanProcessRQ.getGuarantorName())
+                            .status("ACT")
+                            .build());
+        } else {
+            throw new RuntimeException("Error al crear garante");
+        }
+    }
+
+    //Creación del asset
+    private Asset createAsset(LoanProcessRQ loanProcessRQ){
+        if(loanProcessRQ.getAssetAmount() != null
+                && loanProcessRQ.getAssetType() != null
+                && loanProcessRQ.getAssetName() != null
+                && loanProcessRQ.getAssetCurrency() != null){
+            return assetRepository.save(
+                    Asset.builder()
+                            .amount(loanProcessRQ.getAssetAmount())
+                            .type(loanProcessRQ.getAssetType())
+                            .name(loanProcessRQ.getAssetName())
+                            .currency(loanProcessRQ.getAssetCurrency())
+                            .status("ACT")
+                            .build());
+        }else{
+            throw new RuntimeException("Error al crear asset");
+        }
+    }
+    //Response Loan
     private LoanRS transformLoan(Loan loan) {
         return LoanRS
                 .builder()
-                .id(loan.getId())
                 .groupCompanyId(loan.getGroupCompanyId())
                 .customerId(loan.getCustomerId())
                 .guarantorId(loan.getGuarantorId())

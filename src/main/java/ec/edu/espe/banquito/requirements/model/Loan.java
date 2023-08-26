@@ -22,20 +22,20 @@ public class Loan {
     @Column(name = "LOAN_ID", nullable = false)
     private Integer id;
 
-    @Column(name = "GROUP_COMPANY_ID")
-    private Integer groupCompanyId;
+    @Column(name = "GROUP_COMPANY_ID", length = 36)
+    private String groupCompanyId;
 
-    @Column(name = "CUSTOMER_ID")
-    private Integer customerId;
+    @Column(name = "CUSTOMER_ID", length = 36)
+    private String customerId;
 
     @Column(name = "GUARANTOR_ID")
     private Integer guarantorId;
 
-    @Column(name = "BRANCH_ID")
-    private Integer branchId;
+    @Column(name = "BRANCH_ID", length = 36)
+    private String branchId;
 
-    @Column(name = "LOAN_PRODUCT_ID", nullable = false)
-    private Integer loanProductId;
+    @Column(name = "LOAN_PRODUCT_ID", nullable = false, length = 36)
+    private String loanProductId;
 
     @Column(name = "ASSET_ID")
     private Integer assetId;

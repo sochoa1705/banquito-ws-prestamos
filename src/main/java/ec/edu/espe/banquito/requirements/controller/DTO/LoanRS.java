@@ -10,12 +10,11 @@ import lombok.Data;
 @Builder
 public class LoanRS {
 
-    private Integer id;
-    private Integer groupCompanyId;
-    private Integer customerId;
+    private String groupCompanyId;
+    private String customerId;
     private Integer guarantorId;
-    private Integer branchId;
-    private Integer loanProductId;
+    private String branchId;
+    private String loanProductId;
     private Integer assetId;
     private String uniqueKey;
     private String loanHolderType;
