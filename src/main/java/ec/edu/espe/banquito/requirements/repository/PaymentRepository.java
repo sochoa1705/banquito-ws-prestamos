@@ -22,4 +22,6 @@ public interface PaymentRepository extends JpaRepository<Payment,Integer>{
     Payment findByLoanIdAndLoanTransactionIdAndAccountTransactionId(Integer loanId,
                                                                     Integer loanTransactionId,
                                                                     String accountTransactionId);
+    Payment findByDebtorAccountAndStatus(String debtorAccount, String status);
+
 }

@@ -1,9 +1,15 @@
 package ec.edu.espe.banquito.requirements.service;
 
+import ec.edu.espe.banquito.requirements.controller.DTO.DetailsPayment;
 import ec.edu.espe.banquito.requirements.controller.DTO.PaymentRQ;
 import ec.edu.espe.banquito.requirements.controller.DTO.PaymentRS;
+import ec.edu.espe.banquito.requirements.model.Loan;
+import ec.edu.espe.banquito.requirements.model.LoanTransaction;
 import ec.edu.espe.banquito.requirements.model.Payment;
+import ec.edu.espe.banquito.requirements.repository.LoanRepository;
+import ec.edu.espe.banquito.requirements.repository.LoanTransactionRepository;
 import ec.edu.espe.banquito.requirements.repository.PaymentRepository;
+import ec.edu.espe.banquito.requirements.service.ExternalRestServices.LoanProductRestService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +22,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PaymentService {
     private final PaymentRepository paymentRepository;
+    private final LoanTransactionRepository loanTransactionRepository;
+    private final LoanRepository loanRepository;
+    private final LoanProductRestService loanProductRestService;
 
     public PaymentRS getPayment( Integer id){
         Optional<Payment> optionalPayment = paymentRepository.findById(id);
@@ -38,6 +47,29 @@ public class PaymentService {
             return this.transformToPaymentRS(paymentRepository.save(newPayment));
         }
     }
+
+    public DetailsPayment obtainDetailsPayment(String creditorAccount, String status) {
+        Payment payment = paymentRepository.findByDebtorAccountAndStatus(creditorAccount, status);
+
+        if (payment != null) {
+            LoanTransaction loanTransaction = loanTransactionRepository.findById(payment.getLoanTransactionId()).orElse(null);
+            Loan loan = loanRepository.findById(payment.getLoanTransactionId()).orElse(null);
+
+            DetailsPayment detailsPayment = DetailsPayment.builder()
+                    .name(loan.getName())
+                    .loanProductId(loanProductRestService.sendObtainNameProductRequest(loan.getLoanProductId()))
+                    .dueDate(payment.getDueDate())
+                    .amount(loanTransaction != null ? loanTransaction.getAmount() : null)
+                    .build();
+
+            return detailsPayment;
+        } else {
+            return null;
+        }
+    }
+
+
+
 
     /*
     @Transactional
