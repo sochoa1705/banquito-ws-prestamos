@@ -17,7 +17,7 @@ public class AccountTransactionRestService {
 
     private final RestTemplate restTemplate;
 
-    public void sendAccountTransactionCreationRequest(String creditorAccount, String debtorAccount,
+    public String sendAccountTransactionCreationRequest(String creditorAccount, String debtorAccount,
                                                       String transactionType, String parentTransactionKey,
                                                       Float amount, String reference){
         String url = "https://banquito-ws-cuentas-ntsumodxxq-uc.a.run.app/api/v1/account-transaction";
@@ -37,5 +37,7 @@ public class AccountTransactionRestService {
         if(!response.getStatusCode().is2xxSuccessful()){
             throw new RuntimeException("Error al crear una transacción en el servicio externo");
         }
+
+        return response.getBody();
     }
 }

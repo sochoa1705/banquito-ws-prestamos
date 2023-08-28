@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 
@@ -44,21 +45,7 @@ public class LoanService {
         }
 
         /* Crear objeto prestamo */
-        Loan newLoan = Loan.builder()
-                .groupCompanyId(loanProcessRQ.getGroupCompanyId())
-                .customerId(loanProcessRQ.getCustomerId())
-                .branchId(loanProcessRQ.getBranchId())
-                .loanProductId(loanProcessRQ.getLoanProductId())
-                .loanHolderType(loanProcessRQ.getLoanHolderType())
-                .loanHolderCode(loanProcessRQ.getLoanHolderCode())
-                .name(loanProcessRQ.getLoanName())
-                .amount(loanProcessRQ.getLoanAmount())
-                .term(loanProcessRQ.getLoanTerm())
-                .gracePeriod(loanProcessRQ.getLoanGracePeriod())
-                .gracePeriodType(loanProcessRQ.getLoanGracePeriodType())
-                .interestRate(loanProcessRQ.getLoanInterestRate())
-                .quote(loanProcessRQ.getLoanQuote())
-                .build();
+        Loan newLoan = this.initialLoan(loanProcessRQ);
 
         /* Verificar existencia de préstamos para cliente y grupo de compañia */
         Loan existLoanCustomer = this.loanRepository.findByCustomerIdAndLoanProductIdAndLoanHolderTypeAndLoanHolderCode(
@@ -94,17 +81,7 @@ public class LoanService {
         log.info("Punto C: Después de la creación del prestamo...");
 
         /* Creación objeto loanTransaction - desembolso */
-        LoanTransaction newLoanTransaction = LoanTransaction.builder()
-                .uniqueKey(UUID.randomUUID().toString())
-                .type("DIS") //Fondos del prestamo entregado al cliente
-                .creationDate(new Date())
-                .bookingDate(new Date())
-                .valueDate(new Date())
-                .status("COM")
-                .amount(createdLoan.getAmount())
-                .applyTax(false)
-                .notes("Fondos prestamo entregado al cliente")
-                .build();
+        LoanTransaction newLoanTransaction = this.initialLoanTransaction(createdLoan.getAmount());
 
         /* valido si ya se realizo la transacción */
         LoanTransaction firstTransaction = loanTransactionRepository.findByUniqueKey(newLoanTransaction.getUniqueKey());
@@ -117,11 +94,9 @@ public class LoanService {
         LoanTransaction createdLoanTransaction = loanTransactionRepository.save(newLoanTransaction);
 
         /* Crear objeto payment */
-        log.info("Punto E: Después de la creación de la transacción de loan...");
         Payment createdPayment = null;
         if(loanProcessRQ.getBankCode() != null && loanProcessRQ.getAccount() != null){
-            log.info("Punto F: Ingreso al if de payment...");
-            Payment newPayment = Payment.builder()
+            createdPayment = paymentRepository.save(Payment.builder()
                     .loanId(createdLoan.getId())
                     .loanTransactionId(createdLoanTransaction.getId())
                     .type(createdLoanTransaction.getType())
@@ -132,19 +107,23 @@ public class LoanService {
                     .debtorAccount(null)
                     .debtorBankCode(null)
                     .dueDate(new Date())
-                    .build();
-            log.info("Punto G: Después de la asignación del newPayment...");
-            /* Guardar el payment */
-            createdPayment = paymentRepository.save(newPayment);
+                    .build());
         }else{
             throw new RuntimeException("Error payment");
         }
 
         //Desembolso del prestamo - Pendiente asignación del uuid al createdPayment
-        accountTransactionRestService.sendAccountTransactionCreationRequest(createdPayment.getCreditorAccount(),
+        String uuid = accountTransactionRestService.sendAccountTransactionCreationRequest(createdPayment.getCreditorAccount(),
                 createdPayment.getDebtorAccount(), "CRED", null, createdLoan.getAmount().floatValue(),"Desembolso prestamo");
-
+        if(uuid.length() < 36 ) throw new RuntimeException("No se realizo la transacción");
         /* Suponiendo que paso sin problemas */
+        Payment paymentEdit = paymentRepository.findById(createdPayment.getId()).orElse(null);
+        if(paymentEdit != null){
+            paymentEdit.setAccountTransactionId(uuid);
+            paymentRepository.save(paymentEdit);
+        }else{
+            throw new RuntimeException("No se guardo el payment");
+        }
 
         //Generación de primer pago del cliente
         LoanTransaction fisrtPaymenLoantransaction = LoanTransaction.builder()
@@ -178,7 +157,7 @@ public class LoanService {
                 .debtorBankCode(loanProcessRQ.getBankCode())
                 .dueDate(calendar1.getTime())
                 .build();
-
+        this.paymentRepository.save(firstPayment);
         return this.transformLoan(createdLoan);
     }
 
@@ -217,6 +196,41 @@ public class LoanService {
             throw new RuntimeException("Error al crear asset");
         }
     }
+
+    //Crear objeto loan inicial
+    private Loan initialLoan(LoanProcessRQ loanProcessRQ){
+        return Loan.builder()
+                .groupCompanyId(loanProcessRQ.getGroupCompanyId())
+                .customerId(loanProcessRQ.getCustomerId())
+                .branchId(loanProcessRQ.getBranchId())
+                .loanProductId(loanProcessRQ.getLoanProductId())
+                .loanHolderType(loanProcessRQ.getLoanHolderType())
+                .loanHolderCode(loanProcessRQ.getLoanHolderCode())
+                .name(loanProcessRQ.getLoanName())
+                .amount(loanProcessRQ.getLoanAmount())
+                .term(loanProcessRQ.getLoanTerm())
+                .gracePeriod(loanProcessRQ.getLoanGracePeriod())
+                .gracePeriodType(loanProcessRQ.getLoanGracePeriodType())
+                .interestRate(loanProcessRQ.getLoanInterestRate())
+                .quote(loanProcessRQ.getLoanQuote())
+                .build();
+    }
+
+    //Crear objeto loanTransaction inicial
+    private LoanTransaction initialLoanTransaction(BigDecimal amount){
+        return LoanTransaction.builder()
+                .uniqueKey(UUID.randomUUID().toString())
+                .type("DIS") //Fondos del prestamo entregado al cliente
+                .creationDate(new Date())
+                .bookingDate(new Date())
+                .valueDate(new Date())
+                .status("COM")
+                .amount(amount)
+                .applyTax(false)
+                .notes("Fondos prestamo entregado al cliente")
+                .build();
+    }
+
     //Response Loan
     private LoanRS transformLoan(Loan loan) {
         return LoanRS
